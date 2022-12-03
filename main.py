@@ -46,8 +46,7 @@ def red_or_green(val):
 st.title('qbr dashboard ')
 
 # get the data and load it
-data_file = make_str(st.text_input('Enter File Path to your data'))
-data_load_state = st.text('Loading Data...')
+data_file = st.file_uploader('Choose your data file')
 data = data_loader(data_file)
 clean_data = data.shape[0]
 data_load_state.text('loading data... done!')
