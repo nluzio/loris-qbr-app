@@ -49,7 +49,7 @@ st.title('qbr dashboard ')
 data_file = st.file_uploader('Choose your data file')
 data = data_loader(data_file)
 clean_data = data.shape[0]
-data_load_state.text('loading data... done!')
+
 
 # sidebar build
 with st.sidebar:
