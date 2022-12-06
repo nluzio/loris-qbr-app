@@ -25,10 +25,10 @@ if st.checkbox('Use your own data?'):
     clean_data = data.shape[0]
 else:
     st.write('*REMINDER* This is randomly generated data. To use your own dataset, use the checkbox above')
-    data_file = pd.DataFrame(np.random.randint(300, 10000, size=(5000, 6)), columns=['CONVERSATION_ID', 'CONV_ART',
+    data_file = pd.DataFrame(np.random.randint(300, 10000, size=(5000, 7)), columns=['CONVERSATION_ID', 'CONV_ART',
                                                                                      'CONV_FRT', 'CONV_DURATION',
                                                                                      'CSAT_SCORE',
-                                                                                     'AGENT_NAME'])
+                                                                                     'AGENT_NAME', 'usage'])
     rand_dates = pd.DataFrame(
         qbr.random_dates(start=pd.to_datetime('2022-07-01'), end=pd.to_datetime('2022-10-01'), n=5000))
     data = rand_dates.join(data_file)
@@ -85,15 +85,15 @@ with st.container():
     ART, FRT, Duration = st.columns(3, gap='large')
     with ART:
         st.subheader('Distribution of ART')
-        scatter = px.scatter(data, x='usage', y='CONV_ART', width=600)
+        scatter = px.scatter(data, x='usage', y='CONV_ART', width=500, marginal_y='violin', marginal_x='histogram')
         st.plotly_chart(scatter)
     with FRT:
         st.subheader('Distribution of FRT')
-        scatter2 = px.scatter(data, x='usage', y='CONV_FRT', width=600)
+        scatter2 = px.scatter(data, x='usage', y='CONV_FRT', width=500, marginal_y='violin', marginal_x='histogram')
         st.plotly_chart(scatter2)
     with Duration:
         st.subheader('Distribution of Duration')
-        scatter3 = px.scatter(data, x='usage', y='CONV_DURATION', width=600)
+        scatter3 = px.scatter(data, x='usage', y='CONV_DURATION', width=600, marginal_y='violin', marginal_x='histogram')
         st.plotly_chart(scatter3)
 if st.checkbox('Usage Based Analysis'):
     with st.container():
@@ -118,6 +118,8 @@ if st.checkbox('Usage Based Analysis'):
                 high_data = high_low[0]
                 st.subheader('High Usage Statistics')
                 st.write('High Use Conversation Count = ', high_data.shape[0])
+                csat_h = (high_data['CSAT_SCORE'].shape[0] - high_data['CSAT_SCORE'].isna().sum())/ high_data.shape[0]
+                st.write('CSAT Response Rate = ', round(csat_h*100, 2), '%')
                 if selected_teams:
                     if check_period:
                         high_stats = high_data.groupby(
@@ -137,9 +139,16 @@ if st.checkbox('Usage Based Analysis'):
                 low_data = high_low[1]
                 st.subheader('Low Usage Statistics')
                 st.write('Low Use Conversation Count = ', low_data.shape[0])
+                csat_l = (low_data['CSAT_SCORE'].shape[0] - low_data['CSAT_SCORE'].isna().sum()) / low_data.shape[0]
+                st.write('CSAT Response Rate = ', round(csat_l * 100, 2), '%')
                 if selected_teams:
-                    low_stats = low_data.groupby(low_data['TEAM_NAME'])[selection].mean().reset_index().set_index(
-                        'TEAM_NAME')
+                    if check_period:
+                        low_stats = low_data.groupby(
+                            [low_data['TEAM_NAME'], pd.Grouper(key='date', freq=period)])[
+                            selection].mean().reset_index().set_index('TEAM_NAME')
+                    else:
+                        low_stats = low_data.groupby(low_data['TEAM_NAME'])[selection].mean().reset_index().set_index(
+                                    'TEAM_NAME')
                 else:
                     low_stats = low_data.groupby(pd.Grouper(key='date', freq=period))[
                         selection].mean().reset_index().set_index('date')
