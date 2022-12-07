@@ -6,11 +6,7 @@ import plotly.express as px
 
 st.set_page_config(layout='wide')
 
-# First - define the data set we are working with. FUTURE: this will be an argument passed from the terminal by the user
-# using arg parse
 
-# '/Users/nickluzio/PycharmProjects/Auctane QBR/auctane QA (4).csv'
-# C:\Users\Nick Luzio\Downloads\auctane QA (4).csv
 
 
 # Building the streamlit app features
@@ -21,9 +17,11 @@ st.title('qbr dashboard ')
 if st.checkbox('Use your own data?'):
     data_file = st.file_uploader('Choose your data file. Ignore the error, it will go away once you upload a file. I '
                                  'will fix it soon. :)')
+    # stops error when no file is uploaded -- function loads data and makes date column
     if data_file is not None:
         data = qbr.data_loader(data_file)
         clean_data = data.shape[0]
+# random data set that is generated to showcase functionality if you don't have a dataset
 else:
     st.write('*REMINDER* This is randomly generated data. To use your own dataset, use the checkbox above')
     data_file = pd.DataFrame(np.random.randint(300, 10000, size=(5000, 7)), columns=['CONVERSATION_ID', 'CONV_ART',
@@ -97,8 +95,10 @@ with st.container():
         scatter3 = px.scatter(data, x='usage', y='CONV_DURATION', width=600, marginal_y='violin',
                               marginal_x='histogram')
         st.plotly_chart(scatter3)
+# this section is usage based analysis. Usage being high and low loris usage
 if st.checkbox('Usage Based Analysis'):
     with st.container():
+        # allows user to choose how they want to break the data
         st.header('High-Low Use Analysis')
         usage = st.slider('Usage %')
         st.write('Median Usage = ', data['usage'].median())
@@ -106,12 +106,15 @@ if st.checkbox('Usage Based Analysis'):
             'Period for Analysis. Use M or W, the default period start is Sunday. You can specify the '
             'day you want your grouping to start '
             'on by using w-MON, w-TUE.', value='W')
+    # function below takes data set and cuts it into two. returns a list, high is at position 0, low is at position 1
         high_low = qbr.usage_spliter(data, usage)
         st.write('Date Range = ', data['date'].min(), ' - ', data['date'].max())
+    # selected_teams lets the user choose whether to analyze with agent teams or not.
         selected_teams = st.checkbox('Use Teams?')
         if selected_teams:
             check_period = st.checkbox('Use Period Analysis?')
         with st.container():
+            # selection is a list of metrics that the user selects
             selection = st.multiselect('Select Which Metrics To Run:',
                                        ['CONV_ART', 'CONV_FRT', 'CONV_DURATION', 'CSAT_SCORE'])
             st.subheader('Average Based Change Analysis')
@@ -120,6 +123,7 @@ if st.checkbox('Usage Based Analysis'):
                 high_data = high_low[0]
                 st.subheader('High Usage Statistics')
                 st.write('High Use Conversation Count = ', high_data.shape[0])
+                # finding csat response rate
                 csat_h = (high_data['CSAT_SCORE'].shape[0] - high_data['CSAT_SCORE'].isna().sum()) / high_data.shape[0]
                 st.write('CSAT Response Rate = ', round(csat_h * 100, 2), '%')
                 if selected_teams:
@@ -159,6 +163,7 @@ if st.checkbox('Usage Based Analysis'):
                 val_low.rename(columns={0: 'Overall Average'}, inplace=True)
                 st.table(val_low)
             st.subheader('Percent Change')
+            # calculating the % change from the low group to the high group using ((y2-y1)/y1)*100
             CONV_ART, CONV_FRT, CONV_DURATION, CSAT_SCORE = st.columns(4)
             with CONV_ART:
                 delta = ((high_data['CONV_ART'].mean() - low_data['CONV_ART'].mean()) / low_data[
