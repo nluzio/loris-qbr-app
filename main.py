@@ -21,8 +21,9 @@ st.title('qbr dashboard ')
 if st.checkbox('Use your own data?'):
     data_file = st.file_uploader('Choose your data file. Ignore the error, it will go away once you upload a file. I '
                                  'will fix it soon. :)')
-    data = qbr.data_loader(data_file)
-    clean_data = data.shape[0]
+    if data_file is not None:
+        data = qbr.data_loader(data_file)
+        clean_data = data.shape[0]
 else:
     st.write('*REMINDER* This is randomly generated data. To use your own dataset, use the checkbox above')
     data_file = pd.DataFrame(np.random.randint(300, 10000, size=(5000, 7)), columns=['CONVERSATION_ID', 'CONV_ART',
@@ -93,7 +94,8 @@ with st.container():
         st.plotly_chart(scatter2)
     with Duration:
         st.subheader('Distribution of Duration')
-        scatter3 = px.scatter(data, x='usage', y='CONV_DURATION', width=600, marginal_y='violin', marginal_x='histogram')
+        scatter3 = px.scatter(data, x='usage', y='CONV_DURATION', width=600, marginal_y='violin',
+                              marginal_x='histogram')
         st.plotly_chart(scatter3)
 if st.checkbox('Usage Based Analysis'):
     with st.container():
@@ -118,8 +120,8 @@ if st.checkbox('Usage Based Analysis'):
                 high_data = high_low[0]
                 st.subheader('High Usage Statistics')
                 st.write('High Use Conversation Count = ', high_data.shape[0])
-                csat_h = (high_data['CSAT_SCORE'].shape[0] - high_data['CSAT_SCORE'].isna().sum())/ high_data.shape[0]
-                st.write('CSAT Response Rate = ', round(csat_h*100, 2), '%')
+                csat_h = (high_data['CSAT_SCORE'].shape[0] - high_data['CSAT_SCORE'].isna().sum()) / high_data.shape[0]
+                st.write('CSAT Response Rate = ', round(csat_h * 100, 2), '%')
                 if selected_teams:
                     if check_period:
                         high_stats = high_data.groupby(
@@ -148,7 +150,7 @@ if st.checkbox('Usage Based Analysis'):
                             selection].mean().reset_index().set_index('TEAM_NAME')
                     else:
                         low_stats = low_data.groupby(low_data['TEAM_NAME'])[selection].mean().reset_index().set_index(
-                                    'TEAM_NAME')
+                            'TEAM_NAME')
                 else:
                     low_stats = low_data.groupby(pd.Grouper(key='date', freq=period))[
                         selection].mean().reset_index().set_index('date')

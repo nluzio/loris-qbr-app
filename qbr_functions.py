@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 
 
 # define some functions
-@st.cache
+@st.experimental_memo
 def data_loader(first_data):
     data = pd.read_csv(first_data)
     data['date'] = pd.to_datetime(data['CONV_CREATED'])
@@ -68,11 +68,17 @@ def diverging_sentiment(data_file, company_or_agent='company', intents_or_agents
     # prep pivot table for figure
     pvt = pd.pivot_table(dfagents, index=intents_or_agents, columns='RAW_SENTIMENT_VALUE', values='CONVERSATION_ID',
                          aggfunc='count')
-    pvt[-2] = pvt[-2] * -1
-    pvt[-1] = pvt[-1] * -1
     pvt.fillna(0, inplace=True)
-
-    pvt.sort_values(by=order_by, inplace=True)
+    pvt['total'] = (pvt[-2] + pvt[-1] + pvt[1] + pvt[2])
+    pvt[1] = round((pvt[1] / pvt['total']) * 100, 2)
+    pvt[2] = round((pvt[2] / pvt['total']) * 100, 2)
+    pvt[-1] = round(((pvt[-1] / pvt['total']) * 100) * -1, 2)
+    pvt[-2] = round(((pvt[-2] / pvt['total']) * 100) * -1, 2)
+    # pvt[-1] = pvt[-1]*-1
+    if order_by > 0:
+        pvt.sort_values(by=order_by, ascending=False, inplace=True)
+    else:
+        pvt.sort_values(by=order_by, inplace=True)
     df = pvt[:top]
     # create the figure
     diverging = go.Figure()
