@@ -8,6 +8,13 @@ import plotly.graph_objects as go
 @st.experimental_memo
 def data_loader(first_data):
     data = pd.read_csv(first_data)
+    cols = list(data.columns.values)
+    if 'Ticket Number' in cols:
+        data.rename(columns={'Date': 'CONV_CREATED', 'Suggestion Clicked': 'CLICK', 'Techniques Viewed': 'VIEW',
+                             'Ticket Number': 'CONVERSATION_ID', 'Average Response Time': 'CONV_ART',
+                             'First Response Time': 'CONV_FRT', 'Duration': 'CONV_DURATION',
+                             'Solving Agent': 'AGENT_NAME', 'Intents': 'ARRAY_INTENTS'}, inplace=True)
+        data['CSAT_SCORE'] = 0
     data['date'] = pd.to_datetime(data['CONV_CREATED'])
     data['usage'] = (data['CLICK'] / data['VIEW']) * 100
     data['usage'].fillna(0, inplace=True)
@@ -29,7 +36,6 @@ def date_splitter(data_set, splitter):
     return dset
 
 
-@st.cache
 def usage_spliter(data_set, splitter):
     high = data_set[data_set['usage'] >= splitter]
     low = data_set[data_set['usage'] < splitter]
@@ -50,6 +56,8 @@ def random_dates(start, end, n=10):
 
 
 def make_metric(name, val='N/A', change='N/A', d_color='normal'):
+    val = round(val, 2)
+    change = round(change, 2)
     st.metric(name, val, delta=change, delta_color=d_color)
 
 
@@ -125,3 +133,18 @@ def diverging_sentiment(data_file, company_or_agent='company', intents_or_agents
                             paper_bgcolor='#fff')
 
     return diverging
+
+
+def intent_breakdown_maker(data_frame, selection):
+    max_col = data_frame['ARRAY_SIZE'].max()
+    array_list = list(range(max_col))
+    data_frame[array_list] = data_frame['ARRAY_INTENTS'].str.split(',', expand=True)
+    freq_table = data_frame[0].value_counts(normalize=True).reset_index()
+    freq_table.rename(columns={'index': 'Intent', 0: 'Frequency'}, inplace=True)
+    freq_table['Frequency'] = freq_table['Frequency'] * 100
+    intent_table = data_frame.groupby(data_frame[0])[selection].mean().reset_index()
+    intent_table.rename(columns={0: 'Intent'}, inplace=True)
+    merge_table = intent_table.merge(freq_table, on='Intent')
+    merge_table.sort_values(by='Frequency', ascending=False, inplace=True)
+    merge_table.set_index('Intent', inplace=True)
+    return merge_table

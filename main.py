@@ -6,9 +6,6 @@ import plotly.express as px
 
 st.set_page_config(layout='wide')
 
-
-
-
 # Building the streamlit app features
 # title of the app
 st.title('qbr dashboard ')
@@ -106,10 +103,11 @@ if st.checkbox('Usage Based Analysis'):
             'Period for Analysis. Use M or W, the default period start is Sunday. You can specify the '
             'day you want your grouping to start '
             'on by using w-MON, w-TUE.', value='W')
-    # function below takes data set and cuts it into two. returns a list, high is at position 0, low is at position 1
+        # function below takes data set and cuts it into two. returns a list, high is at position 0, low is at
+        # position 1
         high_low = qbr.usage_spliter(data, usage)
         st.write('Date Range = ', data['date'].min(), ' - ', data['date'].max())
-    # selected_teams lets the user choose whether to analyze with agent teams or not.
+        # selected_teams lets the user choose whether to analyze with agent teams or not.
         selected_teams = st.checkbox('Use Teams?')
         if selected_teams:
             check_period = st.checkbox('Use Period Analysis?')
@@ -225,7 +223,8 @@ if st.checkbox('Date Based Analysis'):
             with CONV_ART:
                 delta = ((post_data['CONV_ART'].mean() - pre_data['CONV_ART'].mean()) / pre_data[
                     'CONV_ART'].mean()) * 100
-                qbr.make_metric(name='Average ART', val=post_data['CONV_ART'].mean(), change=delta, d_color='inverse')
+                qbr.make_metric(name='Average ART', val=post_data['CONV_ART'].mean(), change=delta,
+                                d_color='inverse')
             with CONV_FRT:
                 delta = ((post_data['CONV_FRT'].mean() - pre_data['CONV_FRT'].mean()) / pre_data[
                     'CONV_FRT'].mean()) * 100
@@ -239,6 +238,20 @@ if st.checkbox('Date Based Analysis'):
                 delta = ((post_data['CSAT_SCORE'].mean() - pre_data['CSAT_SCORE'].mean()) / pre_data[
                     'CSAT_SCORE'].mean()) * 100
                 qbr.make_metric(name='Average CSAT', val=post_data['CSAT_SCORE'].mean(), change=delta, d_color='normal')
+with st.container():
+    st.header('Intent Breakdown')
+    if high_data is not None:
+        high_col, low_col = st.columns(2)
+        with high_col:
+            st.subheader('High Usage')
+            grouped_val = qbr.intent_breakdown_maker(high_data, selection=selection)
+            st.table(grouped_val)
+        with low_col:
+            st.subheader('Low Usage')
+            g_val = qbr.intent_breakdown_maker(low_data, selection=selection)
+            st.table(g_val)
+    if pre_data is not None:
+        pre_col, post_col = st.columns(2)
 
 with st.container():
     st.header('Sentiment Target Classification')
@@ -256,3 +269,5 @@ with st.container():
         cut_them = st.number_input('Number of results', value=10)
     st.plotly_chart(qbr.diverging_sentiment(data_file=stc_file, company_or_agent=stc_target, intents_or_agents=group_by,
                                             order_by=order_it, top=cut_them))
+
+
